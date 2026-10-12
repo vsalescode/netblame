@@ -219,6 +219,12 @@ main.wrap { padding-bottom: 56px; }
 .line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .s0 { stroke: var(--s0); } .s1 { stroke: var(--s1); } .s2 { stroke: var(--s2); } .s3 { stroke: var(--s3); } .s4 { stroke: var(--s4); }
 .evt { fill: var(--loss-wash); }
+.mark { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+.mark-lbl { fill: var(--ink); font-size: 11px; font-weight: 700; font-family: var(--font); }
+.drops { margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--ink);
+  border-radius: 20px; padding: 22px 24px; }
+.drops > h2 { font-size: 1.2rem; }
+.drops .finding { background: var(--soft); }
 .lossmark { fill: var(--loss); }
 .xhair { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }
 .hit { fill: transparent; cursor: crosshair; }
@@ -312,7 +318,7 @@ tr.after td { color: var(--ink-2); }
       </div>
     </nav>
     <p class="eyebrow"><span class="l-en">Connection diagnosis</span><span class="l-pt" lang="pt-BR">Diagnóstico da conexão</span></p>
-    <h1><span class="l-en">The problem is on the way to the server</span><span class="l-pt" lang="pt-BR">O problema está no caminho até o servidor</span></h1>
+    <h1><span class="l-en">Point of attention: the way to the server</span><span class="l-pt" lang="pt-BR">Ponto de atenção: o caminho até o servidor</span></h1>
     <p class="hero-sub"><span class="l-en">Only game is unreliable (8.3% loss)</span><span class="l-pt" lang="pt-BR">Só o game está instável (8,3% de perda)</span></p>
     <ol class="route" aria-label="Connection path / Caminho da conexão">
 <li class="stop st-ok" style="--next: var(--hst-ok)">
@@ -372,6 +378,8 @@ tr.after td { color: var(--ink-2); }
     <ol class="actions"><li><p class="a-title"><span class="l-en">Only game is unreliable (8.3% loss)</span><span class="l-pt" lang="pt-BR">Só o game está instável (8,3% de perda)</span></p><p><span class="l-en">This is outside your home network. Check the service status page, try another server region, and if it persists report the hop table below to your ISP (a VPN that takes a different route is a common workaround).</span><span class="l-pt" lang="pt-BR">Isso está fora da sua rede. Veja a página de status do serviço, tente outra região de servidor e, se persistir, mostre a tabela de saltos abaixo ao provedor (uma VPN que siga outra rota costuma contornar o problema).</span></p></li><li><p class="a-title"><span class="l-en">Loss on the route to game starts at hop 6 (198.51.100.17), a public router on the way</span><span class="l-pt" lang="pt-BR">A perda na rota até game começa no salto 6 (198.51.100.17), um roteador público no caminho</span></p><p><span class="l-en">Hop 1 = your router/cable. Hops in private ranges right after it = your ISP. Further away = transit between networks; report it to your ISP with this table.</span><span class="l-pt" lang="pt-BR">Salto 1 = seu roteador/cabo. Saltos com IP privado logo depois = seu provedor. Mais adiante = trânsito entre redes; reporte ao provedor com esta tabela.</span></p></li></ol>
   </div>
 </section>
+
+
 
 <section class="block">
   <h2 class="sec"><span class="l-en">Key measurements</span><span class="l-pt" lang="pt-BR">Medidas principais</span></h2>

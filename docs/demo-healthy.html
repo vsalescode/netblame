@@ -219,6 +219,12 @@ main.wrap { padding-bottom: 56px; }
 .line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .s0 { stroke: var(--s0); } .s1 { stroke: var(--s1); } .s2 { stroke: var(--s2); } .s3 { stroke: var(--s3); } .s4 { stroke: var(--s4); }
 .evt { fill: var(--loss-wash); }
+.mark { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+.mark-lbl { fill: var(--ink); font-size: 11px; font-weight: 700; font-family: var(--font); }
+.drops { margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--ink);
+  border-radius: 20px; padding: 22px 24px; }
+.drops > h2 { font-size: 1.2rem; }
+.drops .finding { background: var(--soft); }
 .lossmark { fill: var(--loss); }
 .xhair { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }
 .hit { fill: transparent; cursor: crosshair; }
@@ -372,6 +378,8 @@ tr.after td { color: var(--ink-2); }
     <ol class="actions"><li><p class="a-title"><span class="l-en">No network problem detected in this capture</span><span class="l-pt" lang="pt-BR">Nenhum problema de rede detectado nesta captura</span></p><p><span class="l-en">Run it again while the problem actually happens (e.g. during a match), ideally for longer. UDP was tested against public resolvers, not against your game server, so a clean capture does not rule everything out.</span><span class="l-pt" lang="pt-BR">Rode de novo enquanto o problema estiver acontecendo (durante uma partida, por exemplo), de preferência por mais tempo. O UDP foi testado contra resolvedores públicos, não contra o servidor do jogo - uma captura limpa não descarta tudo.</span></p></li></ol>
   </div>
 </section>
+
+
 
 <section class="block">
   <h2 class="sec"><span class="l-en">Key measurements</span><span class="l-pt" lang="pt-BR">Medidas principais</span></h2>

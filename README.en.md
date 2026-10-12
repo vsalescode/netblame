@@ -142,6 +142,9 @@ Built to be understood by people who aren't network experts:
   "the problem is here". The headline states the result in plain words, e.g. *"The problem is at your
   internet provider"*.
 - **In 30 seconds**: the summary, a scoreboard of the 5 stops and a numbered list of what to do now
+- **When the game dropped**: with `--process`, netblame notices when the game's CPU use collapses
+  (match ended or dropped), shows the wall-clock time and how every point of the network was doing in
+  the 5 seconds before. The moment is also marked on the timeline charts.
 - **Key measurements** as lab-test style rulers: loss, latency, jitter and time offline, each with
   your value, the good/attention/bad bands and a "what is it?"
 - **The path, stop by stop**: what each stop includes, what was found there and what to do
@@ -169,6 +172,11 @@ Built to be understood by people who aren't network experts:
   problem happens, for longer.
 - The app target checks reachability of the service's TCP front door (`battle.net:443`), not the
   specific match server you were on.
+- Many providers intercept DNS (port 53). In that case the UDP test measures the provider's DNS
+  server instead of the path to 1.1.1.1/8.8.8.8. netblame detects it (DNS much slower than a ping to
+  the same IP) and says so in the report.
+- "Game dropped" detection uses the process CPU: it can't tell a disconnect from a normal end of
+  match, which is why the report says "ended or dropped".
 - Windows' UDP counters cover the whole machine. They show *that* datagrams were discarded, not
   *which* program lost them.
 - ICMP-based hop statistics are only as honest as the routers answering them. The rate-limit rule

@@ -219,6 +219,12 @@ main.wrap { padding-bottom: 56px; }
 .line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .s0 { stroke: var(--s0); } .s1 { stroke: var(--s1); } .s2 { stroke: var(--s2); } .s3 { stroke: var(--s3); } .s4 { stroke: var(--s4); }
 .evt { fill: var(--loss-wash); }
+.mark { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+.mark-lbl { fill: var(--ink); font-size: 11px; font-weight: 700; font-family: var(--font); }
+.drops { margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--ink);
+  border-radius: 20px; padding: 22px 24px; }
+.drops > h2 { font-size: 1.2rem; }
+.drops .finding { background: var(--soft); }
 .lossmark { fill: var(--loss); }
 .xhair { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }
 .hit { fill: transparent; cursor: crosshair; }
@@ -372,6 +378,8 @@ tr.after td { color: var(--ink-2); }
     <ol class="actions"><li><p class="a-title"><span class="l-en">3 internet blackout(s) while your router stayed reachable</span><span class="l-pt" lang="pt-BR">3 queda(s) de internet com o roteador respondendo normalmente</span></p><p><span class="l-en">Check the modem/ONT lights (LOS/PON blinking red = fiber signal problem) and reboot it. If it keeps happening, open a ticket with your ISP and attach this report: the timestamps prove your internal network was fine during the drops.</span><span class="l-pt" lang="pt-BR">Confira as luzes do modem/ONT (LOS/PON piscando em vermelho = problema no sinal da fibra) e reinicie. Se continuar, abra um chamado no provedor e anexe este relatório: os horários provam que a sua rede interna estava normal durante as quedas.</span></p></li><li><p class="a-title"><span class="l-en">Loss on the route to cloudflare starts at hop 2 (100.64.12.1), inside your ISP&#x27;s network</span><span class="l-pt" lang="pt-BR">A perda na rota até cloudflare começa no salto 2 (100.64.12.1), dentro da rede do provedor</span></p><p><span class="l-en">Hop 1 = your router/cable. Hops in private ranges right after it = your ISP. Further away = transit between networks; report it to your ISP with this table.</span><span class="l-pt" lang="pt-BR">Salto 1 = seu roteador/cabo. Saltos com IP privado logo depois = seu provedor. Mais adiante = trânsito entre redes; reporte ao provedor com esta tabela.</span></p></li></ol>
   </div>
 </section>
+
+
 
 <section class="block">
   <h2 class="sec"><span class="l-en">Key measurements</span><span class="l-pt" lang="pt-BR">Medidas principais</span></h2>

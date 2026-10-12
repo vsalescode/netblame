@@ -219,6 +219,12 @@ main.wrap { padding-bottom: 56px; }
 .line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .s0 { stroke: var(--s0); } .s1 { stroke: var(--s1); } .s2 { stroke: var(--s2); } .s3 { stroke: var(--s3); } .s4 { stroke: var(--s4); }
 .evt { fill: var(--loss-wash); }
+.mark { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+.mark-lbl { fill: var(--ink); font-size: 11px; font-weight: 700; font-family: var(--font); }
+.drops { margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--ink);
+  border-radius: 20px; padding: 22px 24px; }
+.drops > h2 { font-size: 1.2rem; }
+.drops .finding { background: var(--soft); }
 .lossmark { fill: var(--loss); }
 .xhair { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }
 .hit { fill: transparent; cursor: crosshair; }
@@ -312,7 +318,7 @@ tr.after td { color: var(--ink-2); }
       </div>
     </nav>
     <p class="eyebrow"><span class="l-en">Connection diagnosis</span><span class="l-pt" lang="pt-BR">Diagnóstico da conexão</span></p>
-    <h1><span class="l-en">The problem is at your internet provider</span><span class="l-pt" lang="pt-BR">O problema está no seu provedor</span></h1>
+    <h1><span class="l-en">Point of attention: your provider</span><span class="l-pt" lang="pt-BR">Ponto de atenção: seu provedor</span></h1>
     <p class="hero-sub"><span class="l-en">UDP is being dropped while pings get through (6.8% UDP loss)</span><span class="l-pt" lang="pt-BR">O UDP está sendo descartado enquanto o ping passa (6,8% de perda em UDP)</span></p>
     <ol class="route" aria-label="Connection path / Caminho da conexão">
 <li class="stop st-ok" style="--next: var(--hst-ok)">
@@ -372,6 +378,8 @@ tr.after td { color: var(--ink-2); }
     <ol class="actions"><li><p class="a-title"><span class="l-en">UDP is being dropped while pings get through (6.8% UDP loss)</span><span class="l-pt" lang="pt-BR">O UDP está sendo descartado enquanto o ping passa (6,8% de perda em UDP)</span></p><p><span class="l-en">Usually the router (SIP ALG, flood/DoS protection, an overloaded NAT table) or ISP traffic shaping. Update the router firmware and disable SIP ALG and UDP flood protection; if it persists, show this comparison to your ISP.</span><span class="l-pt" lang="pt-BR">Costuma ser o roteador (SIP ALG, proteção contra flood/DoS, tabela de NAT cheia) ou modelagem de tráfego do provedor. Atualize o firmware do roteador e desative SIP ALG e a proteção contra flood UDP; se continuar, mostre esta comparação ao provedor.</span></p></li></ol>
   </div>
 </section>
+
+
 
 <section class="block">
   <h2 class="sec"><span class="l-en">Key measurements</span><span class="l-pt" lang="pt-BR">Medidas principais</span></h2>

@@ -144,6 +144,9 @@ Feito para ser entendido por quem não é da área:
   um selo marca "o problema está aqui". A manchete diz o resultado em português claro, por exemplo
   *"O problema está no seu provedor"*.
 - **Em 30 segundos**: o resumo, um placar das 5 paradas e uma lista numerada do que fazer agora
+- **Quando o jogo caiu**: com `--process`, o netblame percebe quando a CPU do jogo despenca (partida
+  terminou ou caiu), mostra o horário real e diz como estava cada ponto da rede nos 5 segundos
+  anteriores. O momento também fica marcado nos gráficos da linha do tempo.
 - **Medidas principais** em réguas, como num exame de laboratório: perda, latência, jitter e tempo
   fora do ar, cada uma com o seu valor, a faixa bom/atenção/ruim e um "o que é isso?"
 - **O caminho, parada por parada**: o que cada parada inclui, o que foi encontrado nela e o que fazer
@@ -171,6 +174,11 @@ Feito para ser entendido por quem não é da área:
   *enquanto* o problema acontece, e por mais tempo.
 - O alvo do app checa a "porta da frente" TCP do serviço (`battle.net:443`), e não o servidor
   específico da partida.
+- Muitos provedores interceptam o DNS (porta 53). Nesse caso, o teste UDP mede o servidor DNS do
+  provedor, e não o caminho até 1.1.1.1/8.8.8.8. O netblame detecta isso (DNS muito mais lento que o
+  ping ao mesmo IP) e avisa no relatório.
+- A detecção de "queda do jogo" usa a CPU do processo: ela não separa uma queda de um fim de partida
+  normal. Por isso o relatório diz "terminou ou caiu".
 - Os contadores UDP do Windows são da máquina inteira. Eles mostram *que* houve descarte, não *qual*
   programa perdeu os pacotes.
 - As estatísticas por salto via ICMP só são tão honestas quanto os roteadores que respondem. A regra

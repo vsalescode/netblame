@@ -219,6 +219,12 @@ main.wrap { padding-bottom: 56px; }
 .line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .s0 { stroke: var(--s0); } .s1 { stroke: var(--s1); } .s2 { stroke: var(--s2); } .s3 { stroke: var(--s3); } .s4 { stroke: var(--s4); }
 .evt { fill: var(--loss-wash); }
+.mark { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+.mark-lbl { fill: var(--ink); font-size: 11px; font-weight: 700; font-family: var(--font); }
+.drops { margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--ink);
+  border-radius: 20px; padding: 22px 24px; }
+.drops > h2 { font-size: 1.2rem; }
+.drops .finding { background: var(--soft); }
 .lossmark { fill: var(--loss); }
 .xhair { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }
 .hit { fill: transparent; cursor: crosshair; }
@@ -372,6 +378,8 @@ tr.after td { color: var(--ink-2); }
     <ol class="actions"><li><p class="a-title"><span class="l-en">4 blackout(s) inside your home network</span><span class="l-pt" lang="pt-BR">4 apagão(ões) dentro da sua rede local</span></p><p><span class="l-en">Swap the Ethernet cable and try another router port. Update the network adapter driver and disable its power saving (Device Manager → adapter → Power Management / Advanced → Energy-Efficient Ethernet). If it persists, reboot or replace the router.</span><span class="l-pt" lang="pt-BR">Troque o cabo de rede e teste outra porta do roteador. Atualize o driver da placa de rede e desative a economia de energia (Gerenciador de Dispositivos → placa → Gerenciamento de Energia / Avançado → Energy-Efficient Ethernet). Se continuar, reinicie ou troque o roteador.</span></p></li><li><p class="a-title"><span class="l-en">Loss on the route to cloudflare starts at your router (hop 1)</span><span class="l-pt" lang="pt-BR">A perda na rota até cloudflare começa no seu roteador (salto 1)</span></p><p><span class="l-en">Hop 1 = your router/cable. Hops in private ranges right after it = your ISP. Further away = transit between networks; report it to your ISP with this table.</span><span class="l-pt" lang="pt-BR">Salto 1 = seu roteador/cabo. Saltos com IP privado logo depois = seu provedor. Mais adiante = trânsito entre redes; reporte ao provedor com esta tabela.</span></p></li><li><p class="a-title"><span class="l-en">Ethernet reported 37 error(s) and 12 drop(s) during the capture</span><span class="l-pt" lang="pt-BR">Ethernet registrou 37 erro(s) e 12 descarte(s) durante a captura</span></p><p><span class="l-en">Swap the cable, try another port and update/reinstall the adapter driver from the manufacturer&#x27;s site (not Windows Update).</span><span class="l-pt" lang="pt-BR">Troque o cabo, teste outra porta e atualize/reinstale o driver da placa pelo site do fabricante (não pelo Windows Update).</span></p></li><li><p class="a-title"><span class="l-en">Ethernet negotiated 100 Mbps instead of 1000</span><span class="l-pt" lang="pt-BR">Ethernet negociou 100 Mbps em vez de 1000</span></p><p><span class="l-en">Replace the cable (Cat5e or better) and check both connectors. If the router port is only 100 Mbps this is expected - but an unexpected fallback is a classic cause of drops.</span><span class="l-pt" lang="pt-BR">Troque o cabo (Cat5e ou melhor) e confira os dois conectores. Se a porta do roteador for de 100 Mbps, é esperado - mas uma queda inesperada de velocidade é causa clássica de desconexões.</span></p></li></ol>
   </div>
 </section>
+
+
 
 <section class="block">
   <h2 class="sec"><span class="l-en">Key measurements</span><span class="l-pt" lang="pt-BR">Medidas principais</span></h2>
