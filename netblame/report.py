@@ -283,6 +283,17 @@ HEADLINES = {
 }
 
 
+#: Manchete quando o pior achado é só um aviso: aponta o lugar sem afirmar a culpa.
+HEADLINES_WARN = {
+    "pc": Text("Point of attention: your PC", "Ponto de atenção: seu PC"),
+    "home": Text("Point of attention: your home network", "Ponto de atenção: sua rede de casa"),
+    "isp": Text("Point of attention: your provider", "Ponto de atenção: seu provedor"),
+    "internet": Text("Point of attention: the way through the internet",
+                     "Ponto de atenção: o caminho pela internet"),
+    "app": Text("Point of attention: the way to the server", "Ponto de atenção: o caminho até o servidor"),
+}
+
+
 def culprit(analysis: Analysis) -> Optional[str]:
     v = analysis.verdict
     if v.severity in ("critical", "warning"):
@@ -511,6 +522,20 @@ def _event_bands(analysis: Analysis, x: Scale, top: float, bottom: float) -> lis
     return out
 
 
+def _markers(analysis: Analysis, x: Scale, top: float, bottom: float, label: bool) -> list[str]:
+    """Linha vertical nos momentos marcados (ex.: quando o jogo caiu)."""
+    out = []
+    for t, text in analysis.markers:
+        px = x(t)
+        out.append(f'<line class="mark" x1="{px:.1f}" x2="{px:.1f}" y1="{top}" y2="{bottom}"/>')
+        if label:
+            anchor = "end" if px > W - 160 else "start"
+            dx = -6 if anchor == "end" else 6
+            out.append(f'<text class="mark-lbl" x="{px + dx:.1f}" y="{top + 12}" text-anchor="{anchor}">'
+                       f'{svg_bi(text)}</text>')
+    return out
+
+
 def _overlay(h: float, top: float, bottom: float) -> str:
     """Linha do crosshair (escondida) + retângulo que captura o ponteiro."""
     return (f'<line class="xhair" x1="0" x2="0" y1="{top}" y2="{bottom}" visibility="hidden"/>'
@@ -537,12 +562,13 @@ def latency_chart(session: Session, analysis: Analysis, x: Scale) -> str:
     for label, slot in slots.items():
         if slot is not None:
             out.append(f'<path class="line s{slot}" d="{_path(sorted(by_target[label]), x, y)}"/>')
+    out += _markers(analysis, x, top, bottom, label=True)
     out.append(_overlay(h, top, bottom))
     out.append("</svg>")
     return "".join(out)
 
 
-def loss_strip(session: Session, x: Scale) -> str:
+def loss_strip(session: Session, analysis: Analysis, x: Scale) -> str:
     row = 22
     top = 4
     h = top + row * len(session.targets) + 26
@@ -560,12 +586,13 @@ def loss_strip(session: Session, x: Scale) -> str:
             cy = top + row * rows[s.target]
             out.append(f'<rect class="lossmark" x="{x(s.t):.1f}" y="{cy + 4}" width="{width:.1f}" height="{row - 8}"/>')
     out += _x_axis(x, session.duration, bottom, top)
+    out += _markers(analysis, x, top, bottom, label=False)
     out.append(_overlay(h, top, bottom))
     out.append("</svg>")
     return "".join(out)
 
 
-def system_chart(session: Session, x: Scale) -> str:
+def system_chart(session: Session, analysis: Analysis, x: Scale) -> str:
     h, top, bottom = 190, 10, 160
     y = Scale(0, 100, bottom, top)
     out = [_svg_open("system", h, Text("CPU and RAM usage over the capture",
@@ -580,6 +607,7 @@ def system_chart(session: Session, x: Scale) -> str:
     ram = [(s.t, s.ram) for s in session.sys]
     out.append(f'<path class="line s0" d="{_path(cpu, x, y)}"/>')
     out.append(f'<path class="line s1" d="{_path(ram, x, y)}"/>')
+    out += _markers(analysis, x, top, bottom, label=True)
     out.append(_overlay(h, top, bottom))
     out.append("</svg>")
     return "".join(out)
@@ -874,8 +902,9 @@ def render(session: Session, analysis: Optional[Analysis] = None, lang: Lang = "
     verdict = analysis.verdict
     stops = build_stops(session, analysis)
     where = culprit(analysis)
-    headline = HEADLINES.get(where or "", Text("Your connection was healthy during the test",
-                                               "Sua conexão estava saudável durante o teste"))
+    headlines = HEADLINES if verdict.severity == "critical" else HEADLINES_WARN
+    headline = headlines.get(where or "", Text("Your connection was healthy during the test",
+                                                "Sua conexão estava saudável durante o teste"))
     hero_state = {"critical": "fail", "warning": "warn"}.get(verdict.severity, "ok")
     demo = ""
     if session.demo_scenario:
@@ -897,14 +926,20 @@ def render(session: Session, analysis: Optional[Analysis] = None, lang: Lang = "
   <p class="lede">{bi(Text("How busy your processor (CPU) and memory (RAM) were during the test.",
                            "O quanto o processador (CPU) e a memória (RAM) estavam ocupados durante o teste."))}</p>
   {legend([("s0", "CPU"), ("s1", "RAM")])}
-  <div class="chart-wrap">{system_chart(session, x)}</div>
+  <div class="chart-wrap">{system_chart(session, analysis, x)}</div>
   {how_to_read(Text("If the lines touch the overload line at the same moments the losses happen, the PC "
                     "could not keep up - the network is not to blame.",
                     "Se as linhas encostam na linha de sobrecarga nos mesmos momentos das perdas, o PC não "
                     "deu conta - a culpa não é da rede."))}
 </section>"""
     notes = "".join(f"<li>{bi(n)}</li>" for n in session.notes)
-    observations = [f for f in analysis.findings if f.severity == "info" and finding_node(f) is None]
+    observations = [f for f in analysis.findings
+                    if f.severity == "info" and finding_node(f) is None and f.category != "drop"]
+    drops = [f for f in analysis.findings if f.category == "drop"]
+    drops_html = ""
+    if drops:
+        drops_html = ('<section class="drops"><h2>' + bi(Text("When the game dropped", "Quando o jogo caiu"))
+                      + "</h2>" + "".join(finding_block(f) for f in drops) + "</section>")
     obs_html = ""
     if observations:
         obs_html = ('<div class="observations"><h4>' + bi(Text("Other observations", "Outras observações"))
@@ -954,6 +989,8 @@ def render(session: Session, analysis: Optional[Analysis] = None, lang: Lang = "
   </div>
 </section>
 
+{drops_html}
+
 <section class="block">
   <h2 class="sec">{bi(Text("Key measurements", "Medidas principais"))}</h2>
   <p class="sec-lede">{bi(Text("Your results next to reference values - like a lab test, the marker shows where you are.",
@@ -980,7 +1017,7 @@ def render(session: Session, analysis: Optional[Analysis] = None, lang: Lang = "
     {target_legend}{not_plotted_note(session)}
     <div class="chart-wrap">{latency_chart(session, analysis, x)}</div>
     <h4 class="strip-title">{bi(Text("Packet loss", "Perda de pacotes"))} <span class="lossdot" aria-hidden="true"></span><small>{bi(Text("= signal that did not come back", "= sinal que não voltou"))}</small></h4>
-    <div class="chart-wrap">{loss_strip(session, x)}</div>
+    <div class="chart-wrap">{loss_strip(session, analysis, x)}</div>
     {how_to_read(Text("Red marks lined up in every row at the same time = the whole connection dropped (shaded "
                       "bands in the chart above). Marks in a single row = only that point had trouble. If the "
                       "'gateway' row is clean while the others fail together, your home network is fine.",
@@ -1257,6 +1294,12 @@ main.wrap { padding-bottom: 56px; }
 .line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 .s0 { stroke: var(--s0); } .s1 { stroke: var(--s1); } .s2 { stroke: var(--s2); } .s3 { stroke: var(--s3); } .s4 { stroke: var(--s4); }
 .evt { fill: var(--loss-wash); }
+.mark { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+.mark-lbl { fill: var(--ink); font-size: 11px; font-weight: 700; font-family: var(--font); }
+.drops { margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--ink);
+  border-radius: 20px; padding: 22px 24px; }
+.drops > h2 { font-size: 1.2rem; }
+.drops .finding { background: var(--soft); }
 .lossmark { fill: var(--loss); }
 .xhair { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }
 .hit { fill: transparent; cursor: crosshair; }

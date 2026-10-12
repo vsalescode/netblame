@@ -48,6 +48,11 @@ NIC_DROPS_WARN = 50  # descartes durante a captura (o Windows conta ruído tamb�
 UDP_LOSS_PCT = 2.0  # perda mínima do UDP para culpar o tratamento de UDP...
 UDP_LOSS_RATIO = 3.0  # ...e quantas vezes maior que a do ICMP ao mesmo destino
 UDP_RX_ERRORS_WARN = 5  # datagramas descartados pelo Windows durante a captura
+RAM_SUSTAINED_S = 30.0  # RAM no limite por tanto tempo seguido já é risco, mesmo sem perda junto
+DROP_MIN_CPU = 100.0  # CPU média do jogo (% de um núcleo) que caracteriza "em partida"
+DROP_RATIO = 0.35  # a CPU do jogo cai para no máximo 35% disso: partida acabou ou caiu
+DROP_WINDOW = 10  # ciclos usados como "antes" da queda
+DNS_HIJACK_MS = 20.0  # UDP/53 tão mais lento que o ping ao mesmo IP: alguém no meio responde
 
 
 @dataclass
@@ -87,7 +92,7 @@ class Event:
 @dataclass
 class Finding:
     severity: Severity
-    category: str  # local | isp | route | pc | dns | udp | cable | bufferbloat | wifi | info | ok
+    category: str  # local | isp | route | pc | dns | udp | cable | bufferbloat | wifi | drop | info | ok
     title: Text  # nas duas línguas: o relatório troca de idioma sem recalcular nada
     detail: Text
     advice: Text
@@ -118,6 +123,8 @@ class Analysis:
     bad_hops: dict[str, Optional[HopStat]] = field(default_factory=dict)
     rate_limited: dict[str, list[int]] = field(default_factory=dict)
     stressed_cycles: set[int] = field(default_factory=set)
+    #: Momentos marcados na linha do tempo do relatório: (segundos, rótulo).
+    markers: list[tuple[float, Text]] = field(default_factory=list)
 
     @property
     def verdict(self) -> Finding:
@@ -745,6 +752,151 @@ def _udp_findings(stats: dict[str, TargetStats], session: Session, stressed: set
     return out
 
 
+def wall_clock(session: Session, t: float) -> str:
+    """Horário real (HH:MM:SS) de um instante da captura."""
+    from datetime import datetime, timedelta
+    try:
+        return (datetime.fromisoformat(session.started_at) + timedelta(seconds=t)).strftime("%H:%M:%S")
+    except ValueError:
+        return _clock(t).en
+
+
+def find_game_drops(session: Session) -> list[int]:
+    """Ciclos em que a CPU do jogo despenca: a partida terminou ou a conexão caiu.
+
+    Em partida, o jogo usa bastante CPU de forma constante. Ao cair para o
+    menu ("conexão perdida") ou ao fim de uma partida, o consumo desaba de
+    repente. Não dá para separar os dois casos só pela CPU, então o relatório
+    fala em "partida terminou ou caiu" - quem jogou sabe qual foi.
+    """
+    cpu = [(x.cycle, x.proc_cpu) for x in sorted(session.sys, key=lambda x: x.cycle)
+           if x.proc_running and x.proc_cpu is not None]
+    drops: list[int] = []
+    for i in range(DROP_WINDOW, len(cpu) - 2):
+        before = statistics.fmean(v for _, v in cpu[i - DROP_WINDOW:i])
+        after = statistics.fmean(v for _, v in cpu[i:i + 3])
+        if before >= DROP_MIN_CPU and after <= DROP_RATIO * before:
+            c = cpu[i][0]
+            if not drops or c - drops[-1] > 30:  # uma marcação por queda
+                drops.append(c)
+    return drops
+
+
+def _game_drop_findings(session: Session) -> tuple[list[Finding], list[tuple[float, Text]]]:
+    """Para cada queda provável do jogo, diz como estava a rede naquele momento."""
+    drops = find_game_drops(session)
+    if not drops:
+        return [], []
+    table = _cycle_table(session)
+    times = {x.cycle: x.t for x in session.sys}
+    watched = session.labels("gateway", "internet", "app")
+    findings, markers = [], []
+    name = session.process_name or "game"
+    for c in drops[:3]:
+        rel = _clock(times[c])
+        at = same(f"{wall_clock(session, times[c])}") + Text(f" ({rel.en} into the capture)",
+                                                             f" ({rel.pt} de captura)")
+        window = range(max(0, c - 5), c + 1)  # os 5 segundos antes da queda
+        failing = sorted({l for w in window for l in watched if table.get(w, {}).get(l, 0) is None})
+        markers.append((times[c], Text(f"{name} dropped", f"{name} caiu")))
+        if failing:
+            names = ", ".join(failing)
+            detail = Text(
+                f"At {at.en} the game's CPU use collapsed - the match ended or the connection dropped. "
+                f"In the 5 seconds before it, these points were failing: {names}. The network is a "
+                "likely culprit; check the timeline at that moment.",
+                f"Às {at.pt} o uso de CPU do jogo despencou - a partida terminou ou a conexão caiu. "
+                f"Nos 5 segundos antes, estes pontos estavam falhando: {names}. A rede é uma "
+                "culpada provável; veja a linha do tempo nesse momento.")
+        else:
+            detail = Text(
+                f"At {at.en} the game's CPU use collapsed - the match ended or the connection dropped. "
+                "In the 5 seconds before it, your router, your provider, the internet and the service "
+                "all answered normally. If you were kicked out at that moment, the fault is on the way "
+                "to the match server (or the server itself), which these probes cannot reach.",
+                f"Às {at.pt} o uso de CPU do jogo despencou - a partida terminou ou a conexão caiu. "
+                "Nos 5 segundos antes, seu roteador, seu provedor, a internet e o serviço responderam "
+                "normalmente. Se você caiu nesse momento, a falha está no caminho até o servidor da "
+                "partida (ou no próprio servidor), que estas sondas não alcançam.")
+        findings.append(Finding(
+            "info", "drop",
+            Text(f"{name} probably dropped at {wall_clock(session, times[c])}",
+                 f"{name} provavelmente caiu às {wall_clock(session, times[c])}"),
+            detail,
+            Text("Turn on the game's own network stats (latency and packet loss in/out). They measure "
+                 "the real UDP traffic to the match server - compare them with this time.",
+                 "Ligue as estatísticas de rede do próprio jogo (latência e perda de pacotes de entrada "
+                 "e saída). Elas medem o UDP real até o servidor da partida - compare com este horário."),
+            score=25,
+            node=None,
+        ))
+    return findings, markers
+
+
+def _ram_findings(session: Session) -> list[Finding]:
+    """RAM no limite por bastante tempo: risco de engasgos mesmo sem perda medida."""
+    longest = run = 0.0
+    last_t: Optional[float] = None
+    peak = 0.0
+    for x in sorted(session.sys, key=lambda x: x.cycle):
+        if x.ram >= RAM_STRESS_PCT:
+            run = run + (x.t - last_t if last_t is not None and run else session.interval)
+            peak = max(peak, x.ram)
+            longest = max(longest, run)
+        else:
+            run = 0.0
+        last_t = x.t
+    if longest < RAM_SUSTAINED_S:
+        return []
+    dur, pk = secs(round(longest)), num(peak)
+    return [Finding(
+        "warning", "pc",
+        Text(f"Memory was almost full for {dur.en}", f"A memória ficou quase cheia por {dur.pt}"),
+        Text(f"RAM stayed at {RAM_STRESS_PCT:.0f}% or more for {dur.en} in a row (peak {pk.en}%). "
+             "With no free memory Windows starts using the disk as memory, and games freeze for "
+             "moments - long enough for a server to drop you.",
+             f"A RAM ficou em {RAM_STRESS_PCT:.0f}% ou mais por {dur.pt} seguidos (pico de {pk.pt}%). "
+             "Sem memória livre, o Windows passa a usar o disco como memória e o jogo congela por "
+             "instantes - tempo suficiente para o servidor te derrubar."),
+        Text("Close heavy programs before playing (browsers, code editors, Docker/WSL with "
+             "'wsl --shutdown'). With 16 GB or less, consider adding more RAM.",
+             "Feche programas pesados antes de jogar (navegadores, editores de código, Docker/WSL com "
+             "'wsl --shutdown'). Com 16 GB ou menos, considere aumentar a memória."),
+        score=36,
+    )]
+
+
+def _dns_hijack_findings(stats: dict[str, TargetStats], session: Session) -> list[Finding]:
+    """UDP/53 muito mais lento que o ping ao mesmo IP: o provedor responde no lugar do resolvedor."""
+    icmp_by_host = {t.host: t.label for t in session.targets if t.role == "internet"}
+    slow = []
+    for t in session.targets:
+        if t.role != "udp" or t.host not in icmp_by_host:
+            continue
+        u, i = stats[t.label], stats[icmp_by_host[t.host]]
+        if (u.median is not None and i.median is not None
+                and u.median - i.median >= DNS_HIJACK_MS and u.median >= 3 * max(i.median, 1.0)):
+            slow.append((t.host, i.median, u.median))
+    if not slow:
+        return []
+    lines = Text.join("; ", [Text(f"{h}: ping {ms(a).en}, DNS {ms(b).en}", f"{h}: ping {ms(a).pt}, DNS {ms(b).pt}")
+                             for h, a, b in slow])
+    return [Finding(
+        "info", "info",
+        Text("Your provider seems to intercept DNS traffic", "Seu provedor parece interceptar o tráfego de DNS"),
+        Text(f"DNS queries to public resolvers take much longer than a ping to the very same address "
+             f"({lines.en}). Someone in the middle - usually the provider - is answering them. That is not "
+             "a cause of drops, but it makes the UDP test measure the provider's DNS server instead of "
+             "the path, so read the UDP vs ICMP comparison with care.",
+             f"Consultas DNS a resolvedores públicos demoram muito mais que um ping ao mesmo endereço "
+             f"({lines.pt}). Alguém no meio - normalmente o provedor - responde por eles. Isso não derruba "
+             "conexões, mas faz o teste UDP medir o servidor DNS do provedor em vez do caminho; leia a "
+             "comparação UDP vs ICMP com cuidado."),
+        Text("Nothing to do for the drops.", "Nada a fazer em relação às quedas."),
+        score=3,
+    )]
+
+
 def _process_findings(session: Session) -> list[Finding]:
     if not session.process_name:
         return []
@@ -789,6 +941,14 @@ def analyze(session: Session) -> Analysis:
     findings += _udp_findings(stats, session, stressed)
     findings += _nic_findings(session.nics_before, session.nics_after)
     findings += _process_findings(session)
+    if not pc_blamed:
+        ram = _ram_findings(session)
+        if ram:
+            findings = [f for f in findings if not (f.category == "pc" and f.severity == "info")]
+        findings += ram
+    findings += _dns_hijack_findings(stats, session)
+    drop_findings, markers = _game_drop_findings(session)
+    findings += drop_findings
 
     if not any(f.severity in ("critical", "warning") for f in findings):
         findings.append(Finding(
@@ -808,4 +968,4 @@ def analyze(session: Session) -> Analysis:
             score=0,
         ))
     findings.sort(key=lambda f: (SEVERITY_RANK[f.severity], -f.score))
-    return Analysis(stats, events, findings, bad, limited, stressed)
+    return Analysis(stats, events, findings, bad, limited, stressed, markers)

@@ -26,7 +26,7 @@ def _print_summary(analysis: Analysis, lang: Lang) -> None:
     print(f"  {v.detail.get(lang)}")
     print(f"  -> {v.advice.get(lang)}")
     for f in analysis.findings[1:]:
-        if f.severity in ("critical", "warning"):
+        if f.severity in ("critical", "warning") or f.category == "drop":
             print(f"  * [{sev(f)}] {f.title.get(lang)}")
 
 
