@@ -1,0 +1,3 @@
+# O netblame roda só com a biblioteca padrão.
+# O psutil é opcional: adiciona CPU/RAM/tráfego e a velocidade/erros das placas de rede.
+psutil>=5.9

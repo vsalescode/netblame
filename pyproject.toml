@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netblame"
+version = "0.1.0"
+description = "Find out WHERE your connection drops: your PC, your router, your ISP or the route to the server."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: System :: Networking :: Monitoring",
+]
+
+[project.optional-dependencies]
+system = ["psutil>=5.9"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+netblame = "netblame.cli:main"
+
+[tool.setuptools]
+packages = ["netblame"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
